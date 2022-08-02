@@ -52,9 +52,13 @@ def _process_plugin_results(plugin_type: str,
         plugin_log = flog.fields(plugin_type=plugin_type, plugin_name=plugin_name)
 
         if isinstance(ansible_doc_results, Exception):
-            error_fields = {}
-            error_fields['exception'] = traceback.format_exception(
-                None, ansible_doc_results, ansible_doc_results.__traceback__)
+            error_fields = {
+                'exception': traceback.format_exception(
+                    None,
+                    ansible_doc_results,
+                    ansible_doc_results.__traceback__,
+                )
+            }
 
             if isinstance(ansible_doc_results, sh.ErrorReturnCode):
                 error_fields['stdout'] = ansible_doc_results.stdout.decode(
@@ -145,12 +149,14 @@ async def _get_plugin_info(plugin_type: str, ansible_doc: 'sh.Command',
 
     loop = best_get_loop()
 
-    # For each plugin, get its documentation
-    extractors = {}
     executor = ThreadPoolExecutor(max_workers=max_workers)
-    for plugin_name in plugin_map.keys():
-        extractors[plugin_name] = loop.run_in_executor(executor, ansible_doc, '-t', plugin_type,
-                                                       '--json', plugin_name)
+    extractors = {
+        plugin_name: loop.run_in_executor(
+            executor, ansible_doc, '-t', plugin_type, '--json', plugin_name
+        )
+        for plugin_name in plugin_map.keys()
+    }
+
     plugin_info = await asyncio.gather(*extractors.values(), return_exceptions=True)
 
     results = _process_plugin_results(plugin_type, extractors, plugin_info)
@@ -193,12 +199,14 @@ def get_collection_metadata(venv: t.Union['VenvRunner', 'FakeVenvRunner'],
             else:
                 collection_name = parts[0]
                 version = parts[1]
-                if '.' in collection_name:
-                    if collection_names is None or collection_name in collection_names:
-                        namespace, name = collection_name.split('.', 2)
-                        collection_metadata[collection_name] = AnsibleCollectionMetadata(
-                            path=os.path.join(current_base_path, namespace, name),
-                            version=None if version == '*' else version)
+                if '.' in collection_name and (
+                    collection_names is None
+                    or collection_name in collection_names
+                ):
+                    namespace, name = collection_name.split('.', 2)
+                    collection_metadata[collection_name] = AnsibleCollectionMetadata(
+                        path=os.path.join(current_base_path, namespace, name),
+                        version=None if version == '*' else version)
 
     return collection_metadata
 
@@ -250,15 +258,10 @@ async def get_ansible_plugin_info(venv: t.Union['VenvRunner', 'FakeVenvRunner'],
     lib_ctx = app_context.lib_ctx.get()
     module_workers = max(int(.7 * lib_ctx.thread_max), 1)
     other_workers = int((lib_ctx.thread_max - module_workers) / (len(DOCUMENTABLE_PLUGINS) - 1))
-    if other_workers < 1:
-        other_workers = 1
-
+    other_workers = max(other_workers, 1)
     extractors = {}
     for plugin_type in DOCUMENTABLE_PLUGINS:
-        if plugin_type == 'module':
-            max_workers = module_workers
-        else:
-            max_workers = other_workers
+        max_workers = module_workers if plugin_type == 'module' else other_workers
         extractors[plugin_type] = create_task(
             _get_plugin_info(plugin_type, venv_ansible_doc, max_workers, collection_names))
 
@@ -273,15 +276,23 @@ async def get_ansible_plugin_info(venv: t.Union['VenvRunner', 'FakeVenvRunner'],
             an_exception = extraction_result
             formatted_exception = traceback.format_exception(None, extraction_result,
                                                              extraction_result.__traceback__)
-            err_msg.append(f'Exception while parsing documentation for {plugin_type} plugins')
-            err_msg.append(f'Exception:\n{"".join(formatted_exception)}')
+            err_msg.extend(
+                (
+                    f'Exception while parsing documentation for {plugin_type} plugins',
+                    f'Exception:\n{"".join(formatted_exception)}',
+                )
+            )
 
         # Note: Exception will also be True.
         if isinstance(extraction_result, sh.ErrorReturnCode):
             stdout = extraction_result.stdout.decode("utf-8", errors="surrogateescape")
             stderr = extraction_result.stderr.decode("utf-8", errors="surrogateescape")
-            err_msg.append(f'Full process stdout:\n{stdout}')
-            err_msg.append(f'Full process stderr:\n{stderr}')
+            err_msg.extend(
+                (
+                    f'Full process stdout:\n{stdout}',
+                    f'Full process stderr:\n{stderr}',
+                )
+            )
 
         if err_msg:
             sys.stderr.write('\n'.join(err_msg))

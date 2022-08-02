@@ -72,15 +72,17 @@ def _add_rst_table_row(builder: RstBuilder, column_widths: t.List[int], row: t.L
             lines[j][i] = line
     for line in lines:
         parts = ['|']
-        for j, cell in enumerate(line):
-            parts.append(' ' + cell + ' ' * (1 + column_widths[j] - len(cell)) + '|')
+        parts.extend(
+            f' {cell}' + ' ' * (1 + column_widths[j] - len(cell)) + '|'
+            for j, cell in enumerate(line)
+        )
+
         builder.add_raw_rst(''.join(parts))
 
 
 def _add_rst_table_line(builder: RstBuilder, column_widths: t.List[int], sep: str):
     parts = ['+']
-    for w in column_widths:
-        parts.append(sep * (w + 2) + '+')
+    parts.extend(sep * (w + 2) + '+' for w in column_widths)
     builder.add_raw_rst(''.join(parts))
 
 
@@ -128,8 +130,7 @@ def append_changelog_changes_collections(builder: RstBuilder,
             row = [collector.collection, '', str(collection_version), '']
             if prev_collection_version is not None:
                 row[1] = str(prev_collection_version)
-            changelog = collector.changelog
-            if changelog:
+            if changelog := collector.changelog:
                 release_entries = changelog.generator.collect(
                     squash=True,
                     after_version=prev_collection_version,
@@ -177,8 +178,7 @@ def append_changelog_changes_ansible(builder: RstBuilder,
 
     release_entry = optimize_release_entry(release_entries[0])
 
-    release_summary = release_entry.changes.pop('release_summary', None)
-    if release_summary:
+    if release_summary := release_entry.changes.pop('release_summary', None):
         builder.add_section('Release Summary', 1)
         builder.add_raw_rst(t.cast(str, release_summary))
         builder.add_raw_rst('')
@@ -240,10 +240,7 @@ def common_start(a: t.List[t.Any], b: t.List[t.Any]) -> int:
     all elements up to that index are equal.
     '''
     common_len = min(len(a), len(b))
-    for i in range(common_len):
-        if a[i] != b[i]:
-            return i
-    return common_len
+    return next((i for i in range(common_len) if a[i] != b[i]), common_len)
 
 
 PluginDumpT = t.List[t.Tuple[t.List[str], str, str]]
@@ -523,24 +520,24 @@ class ReleaseNotes:
 
     @staticmethod
     def _append_base_porting_guide_bytes(builder: RstBuilder, changelog: Changelog) -> None:
-        base_porting_guide = changelog.base_collector.porting_guide
-        if base_porting_guide:
-            lines = base_porting_guide.decode('utf-8').splitlines()
-            lines.append('')
-            found_topics = False
-            found_empty = False
-            for line in lines:
-                if not found_topics:
-                    if line.startswith('.. contents::'):
-                        found_topics = True
-                    continue
-                if not found_empty:
-                    if line == '':
-                        found_empty = True
-                    continue
-                builder.add_raw_rst(line)
+        if not (base_porting_guide := changelog.base_collector.porting_guide):
+            return
+        lines = base_porting_guide.decode('utf-8').splitlines()
+        lines.append('')
+        found_topics = False
+        found_empty = False
+        for line in lines:
+            if not found_topics:
+                if line.startswith('.. contents::'):
+                    found_topics = True
+                continue
             if not found_empty:
-                print('WARNING: cannot find TOC of ansible-base porting guide!')
+                if line == '':
+                    found_empty = True
+                continue
+            builder.add_raw_rst(line)
+        if not found_empty:
+            print('WARNING: cannot find TOC of ansible-base porting guide!')
 
     @staticmethod
     def _get_porting_guide_bytes(changelog: Changelog) -> bytes:
@@ -696,16 +693,16 @@ def build_changelog() -> int:
     release_notes.write_changelog_to(dest_data_dir)
     release_notes.write_porting_guide_to(dest_data_dir)
 
-    missing_changelogs = []
     last_entry = changelog.entries[0]
     last_version_collectors = [
         collector for collector in changelog.collection_collectors
         if last_entry.version in last_entry.versions_per_collection[collector.collection]
     ]
-    for collector in last_version_collectors:
-        if collector.changelog is None:
-            missing_changelogs.append(collector.collection)
-    if missing_changelogs:
+    if missing_changelogs := [
+        collector.collection
+        for collector in last_version_collectors
+        if collector.changelog is None
+    ]:
         print(f"{len(missing_changelogs)} out of {len(last_version_collectors)} collections"
               f" have no compatible changelog:")
         for collection_name in missing_changelogs:

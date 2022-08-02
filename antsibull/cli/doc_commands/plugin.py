@@ -63,17 +63,22 @@ def generate_docs() -> int:
     try:
         ansible_doc_results = venv_ansible_doc('-t', plugin_type, '--json', plugin_name)
     except sh.ErrorReturnCode as exc:
-        err_msg = []
         formatted_exception = traceback.format_exception(None, exc, exc.__traceback__)
-        err_msg.append(f'Exception while parsing documentation for {plugin_type} plugin:'
-                       f' {plugin_name}.  Will not document this plugin.')
-        err_msg.append(f'Exception:\n{"".join(formatted_exception)}')
+        err_msg = [
+            f'Exception while parsing documentation for {plugin_type} plugin:'
+            f' {plugin_name}.  Will not document this plugin.',
+            f'Exception:\n{"".join(formatted_exception)}',
+        ]
 
         stdout = exc.stdout.decode("utf-8", errors="surrogateescape")
         stderr = exc.stderr.decode("utf-8", errors="surrogateescape")
 
-        err_msg.append(f'Full process stdout:\n{stdout}')
-        err_msg.append(f'Full process stderr:\n{stderr}')
+        err_msg.extend(
+            (
+                f'Full process stdout:\n{stdout}',
+                f'Full process stderr:\n{stderr}',
+            )
+        )
 
         sys.stderr.write('\n'.join(err_msg))
         return 1

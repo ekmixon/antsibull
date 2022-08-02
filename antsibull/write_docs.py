@@ -546,10 +546,14 @@ async def output_indexes(collection_to_plugin_info: CollectionInfoT,
 
     async with asyncio_pool.AioPool(size=lib_ctx.thread_max) as pool:
         for collection_name, plugin_maps in collection_to_plugin_info.items():
-            if not squash_hierarchy:
-                collection_dir = os.path.join(collection_toplevel, *(collection_name.split('.')))
-            else:
-                collection_dir = collection_toplevel
+            collection_dir = (
+                collection_toplevel
+                if squash_hierarchy
+                else os.path.join(
+                    collection_toplevel, *(collection_name.split('.'))
+                )
+            )
+
             writers.append(await pool.spawn(
                 write_plugin_lists(collection_name, plugin_maps, collection_plugins_tmpl,
                                    collection_dir, collection_metadata[collection_name],
@@ -579,17 +583,20 @@ async def output_extra_docs(dest_dir: str,
     writers = []
     lib_ctx = app_context.lib_ctx.get()
 
-    if not squash_hierarchy:
-        collection_toplevel = os.path.join(dest_dir, 'collections')
-    else:
-        collection_toplevel = dest_dir
+    collection_toplevel = (
+        dest_dir if squash_hierarchy else os.path.join(dest_dir, 'collections')
+    )
 
     async with asyncio_pool.AioPool(size=lib_ctx.thread_max) as pool:
         for collection_name, (dummy, documents) in extra_docs_data.items():
-            if not squash_hierarchy:
-                collection_dir = os.path.join(collection_toplevel, *(collection_name.split('.')))
-            else:
-                collection_dir = collection_toplevel
+            collection_dir = (
+                collection_toplevel
+                if squash_hierarchy
+                else os.path.join(
+                    collection_toplevel, *(collection_name.split('.'))
+                )
+            )
+
             for source_path, rel_path in documents:
                 full_path = os.path.join(collection_dir, rel_path)
                 os.makedirs(os.path.dirname(full_path), mode=0o755, exist_ok=True)

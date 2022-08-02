@@ -49,7 +49,10 @@ def test_one_plugin_of_each_type(test_file, test_schema):
     plugin_type = plugin_type[len('one_'):]
 
     test_dir = os.path.dirname(__file__)
-    result_file = os.path.join(test_dir, 'good_data', 'one_%s_results.json' % plugin_type)
+    result_file = os.path.join(
+        test_dir, 'good_data', f'one_{plugin_type}_results.json'
+    )
+
     full_path = os.path.join(test_dir, 'good_data', test_file)
 
     with open(result_file, 'r') as f:

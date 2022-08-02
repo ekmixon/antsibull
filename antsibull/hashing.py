@@ -29,7 +29,4 @@ async def verify_hash(filename: str, hash_digest: str, algorithm: str = 'sha256'
         while chunk:
             hasher.update(chunk)
             chunk = await f.read(ctx.chunksize)
-    if hasher.hexdigest() != hash_digest:
-        return False
-
-    return True
+    return hasher.hexdigest() == hash_digest

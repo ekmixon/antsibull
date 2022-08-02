@@ -6,8 +6,7 @@ import yaml
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--depsfile", help="Path to the ansible.deps file", required=True)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def main():

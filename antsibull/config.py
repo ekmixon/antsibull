@@ -36,10 +36,7 @@ def find_config_files(conf_files: t.Iterable[str]) -> t.List[str]:
     paths = [os.path.abspath(p) for p in conf_files]
     flog.fields(paths=paths).info('Paths to check')
 
-    config_files = []
-    for conf_path in paths:
-        if os.path.exists(conf_path):
-            config_files.append(conf_path)
+    config_files = [conf_path for conf_path in paths if os.path.exists(conf_path)]
     flog.fields(paths=config_files).info('Paths found')
 
     flog.debug('Leave')
@@ -106,7 +103,7 @@ def load_config(conf_files: t.Union[t.Iterable[str], str, None] = None) -> t.Dic
     cfg = {}
     for filename in includes:
         new_cfg = perky.load(filename)
-        cfg.update(new_cfg)
+        cfg |= new_cfg
 
     flog.debug('validating configuration')
     # Note: We parse the object but discard the model because we want to validate the config but let

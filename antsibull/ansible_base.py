@@ -207,10 +207,7 @@ def source_is_devel(ansible_base_source: t.Optional[str]) -> bool:
         return False
 
     dev_version = re.compile('[.]dev[0-9]+$')
-    if dev_version.match(source_version.public):
-        return True
-
-    return False
+    return bool(dev_version.match(source_version.public))
 
 
 def source_is_correct_version(ansible_base_source: t.Optional[str],
@@ -232,12 +229,11 @@ def source_is_correct_version(ansible_base_source: t.Optional[str],
 
     # If the source is a compatible version of ansible-base and it is the same or more recent than
     # the requested version then allow this.
-    if (source_version.major == ansible_base_version.major
-            and source_version.minor == ansible_base_version.minor
-            and source_version.micro >= ansible_base_version.micro):
-        return True
-
-    return False
+    return (
+        source_version.major == ansible_base_version.major
+        and source_version.minor == ansible_base_version.minor
+        and source_version.micro >= ansible_base_version.micro
+    )
 
 
 @lru_cache(None)

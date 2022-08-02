@@ -171,9 +171,12 @@ def is_json_value(value: t.Any) -> bool:
         return all(is_json_value(v) for v in value)
     if isinstance(value, dict):
         # Python can have non-str dict keys, as opposed to JSON
-        if not all(isinstance(k, str) for k in value.keys()):
-            return False
-        return all(is_json_value(v) for v in value.values())
+        return (
+            all(is_json_value(v) for v in value.values())
+            if all(isinstance(k, str) for k in value.keys())
+            else False
+        )
+
     return value is None
 
 
@@ -190,10 +193,7 @@ def list_from_scalars(obj):
     if isinstance(obj, (str, int, float)):
         return [obj]
 
-    if obj is None:
-        return []
-
-    return obj
+    return [] if obj is None else obj
 
 
 def transform_return_docs(obj):
@@ -238,20 +238,14 @@ def normalize_option_type_names(obj):
     if obj == 'lists':
         return 'list'
 
-    if obj in ('tmp', 'temppath'):
-        return 'tmppath'
-
-    return obj
+    return 'tmppath' if obj in ('tmp', 'temppath') else obj
 
 
 def normalize_return_type_names(obj):
     """Normalize common mispellings of return type names."""
     obj = normalize_option_type_names(obj)
 
-    if obj == 'raw':
-        return 'any'
-
-    return obj
+    return 'any' if obj == 'raw' else obj
 
 
 class LocalConfig:
@@ -278,7 +272,7 @@ class DeprecationSchema(BaseModel):
     alternative: str = ''
 
     @p.root_validator(pre=True)
-    def rename_version(cls, values):
+    def rename_version(self, values):
         """Make deprecations at this level match the toplevel name."""
         version = values.get('version', _SENTINEL)
         if version is not _SENTINEL:
@@ -292,7 +286,7 @@ class DeprecationSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def rename_date(cls, values):
+    def rename_date(self, values):
         """Make deprecations at this level match the toplevel name."""
         date = values.get('date', _SENTINEL)
         if date is not _SENTINEL:
@@ -306,7 +300,7 @@ class DeprecationSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def rename_collection_name(cls, values):
+    def rename_collection_name(self, values):
         """Make deprecations at this level match the toplevel name."""
         collection_name = values.get('collection_name', _SENTINEL)
         if collection_name is not _SENTINEL:
@@ -320,7 +314,7 @@ class DeprecationSchema(BaseModel):
         return values
 
     @p.root_validator
-    def require_version_xor_date(cls, values):
+    def require_version_xor_date(self, values):
         """Make sure either removed_in or removed_at_date are specified, but not both."""
         # This should be changed to a way that also works in the JSON schema; see
         # https://github.com/ansible-community/antsibull/issues/104
@@ -335,7 +329,7 @@ class DeprecationSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def merge_typo_names(cls, values):
+    def merge_typo_names(self, values):
         alternatives = values.get('alternatives', _SENTINEL)
 
         if alternatives is not _SENTINEL:
@@ -361,21 +355,21 @@ class OptionsSchema(BaseModel):
     version_added_collection: str = COLLECTION_NAME_F
 
     @p.validator('aliases', 'description', 'choices', pre=True)
-    def list_from_scalars(cls, obj):
+    def list_from_scalars(self, obj):
         return list_from_scalars(obj)
 
     @p.validator('default', pre=True)
-    def is_json_value(cls, obj):
+    def is_json_value(self, obj):
         if not is_json_value(obj):
             raise ValueError('`default` must be a JSON value')
         return obj
 
     @p.validator('type', 'elements', pre=True)
-    def normalize_option_type(cls, obj):
+    def normalize_option_type(self, obj):
         return normalize_option_type_names(obj)
 
     @p.root_validator(pre=True)
-    def get_rid_of_name(cls, values):
+    def get_rid_of_name(self, values):
         """
         Remove name from this schema.
 
@@ -387,7 +381,7 @@ class OptionsSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def merge_typo_names(cls, values):
+    def merge_typo_names(self, values):
         element_type = values.get('element_type', _SENTINEL)
 
         if element_type is not _SENTINEL:
@@ -444,11 +438,11 @@ class DocSchema(BaseModel):
 
     @p.validator('author', 'description', 'extends_documentation_fragment', 'notes',
                  'requirements', 'todo', pre=True)
-    def list_from_scalars(cls, obj):
+    def list_from_scalars(self, obj):
         return list_from_scalars(obj)
 
     @p.root_validator(pre=True)
-    def remove_plugin_type(cls, values):
+    def remove_plugin_type(self, values):
         """
         Remove the plugin_type field from the doc.
 
@@ -462,7 +456,7 @@ class DocSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def merge_plugin_names(cls, values):
+    def merge_plugin_names(self, values):
         """
         Normalize the field which plugin names are in.
 
@@ -494,7 +488,7 @@ class DocSchema(BaseModel):
         return values
 
     @p.root_validator(pre=True)
-    def merge_typo_names(cls, values):
+    def merge_typo_names(self, values):
         cb_type = values.get('callback_type', _SENTINEL)
 
         if cb_type is not _SENTINEL:

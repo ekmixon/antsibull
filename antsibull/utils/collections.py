@@ -24,9 +24,7 @@ def is_sequence(obj: t.Any, include_string: bool = False) -> bool:
     """
     if isinstance(obj, (str, bytes)) and not include_string:
         return False
-    if isinstance(obj, Sequence):
-        return True
-    return False
+    return isinstance(obj, Sequence)
 
 
 def compare_all_but(dict_a: t.Mapping, dict_b: t.Mapping,
@@ -55,11 +53,12 @@ def compare_all_but(dict_a: t.Mapping, dict_b: t.Mapping,
 
     sentinel = object()
 
-    for key, value in ((k, v) for k, v in dict_a.items() if k not in keys_to_ignore):
-        if value != dict_b.get(key, sentinel):
-            return False
-
-    return True
+    return all(
+        value == dict_b.get(key, sentinel)
+        for key, value in (
+            (k, v) for k, v in dict_a.items() if k not in keys_to_ignore
+        )
+    )
 
 
 def _make_contained_containers_immutable(obj):
@@ -106,16 +105,13 @@ def _make_immutable(obj: t.Any) -> t.Any:
 
 class ContextDict(ImmutableDict):
     def __init__(self, *args, **kwargs) -> None:
-        if not kwargs and len(args) == 1 and isinstance(args[0], Mapping):
-            # Avoid making an intermediate dict if we were only passed a dict to initialize with
-            tmp_dict = args[0]
-        else:
-            # Otherwise we need the dict constructor to initialize a new dict for us
-            tmp_dict = dict(*args, **kwargs)
+        tmp_dict = (
+            args[0]
+            if not kwargs and len(args) == 1 and isinstance(args[0], Mapping)
+            else dict(*args, **kwargs)
+        )
 
-        toplevel = {}
-        for key, value in tmp_dict.items():
-            toplevel[key] = _make_immutable(value)
+        toplevel = {key: _make_immutable(value) for key, value in tmp_dict.items()}
         super().__init__(toplevel)
 
     @classmethod
@@ -124,10 +120,4 @@ class ContextDict(ImmutableDict):
 
     @classmethod
     def validate_and_convert(cls, value: t.Mapping) -> 'ContextDict':
-        if isinstance(value, ContextDict):
-            # optimization.  If it's already an ImmutableContext, we don't need to recursively
-            # convert things to immutable again.
-            return value
-
-        # Typically this will convert from a dict to an ImmutableContext
-        return cls(value)
+        return value if isinstance(value, ContextDict) else cls(value)

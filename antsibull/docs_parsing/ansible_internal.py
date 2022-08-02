@@ -76,11 +76,13 @@ async def get_ansible_plugin_info(venv: t.Union['VenvRunner', 'FakeVenvRunner'],
                 plugin_log.fields(error=plugin_data['error']).error(
                     'Error while extracting documentation. Will not document this plugin.')
 
-    collection_metadata = {}
-    for collection_name, collection_data in result['collections'].items():
-        collection_metadata[collection_name] = AnsibleCollectionMetadata(
+    collection_metadata = {
+        collection_name: AnsibleCollectionMetadata(
             path=collection_data['path'],
-            version=collection_data.get('version'))
+            version=collection_data.get('version'),
+        )
+        for collection_name, collection_data in result['collections'].items()
+    }
 
     flog.debug('Leave')
     return (plugin_map, collection_metadata)

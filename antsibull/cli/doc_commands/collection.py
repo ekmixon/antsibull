@@ -42,10 +42,10 @@ def generate_docs() -> int:
     """
     app_ctx = app_context.app_ctx.get()
 
-    indexes: bool = app_ctx.indexes
-    squash_hierarchy: bool = app_ctx.extra['squash_hierarchy']
-
     if app_ctx.extra['use_current']:
+        indexes: bool = app_ctx.indexes
+        squash_hierarchy: bool = app_ctx.extra['squash_hierarchy']
+
         return generate_current_docs(indexes, squash_hierarchy)
 
     raise NotImplementedError('Priority to implement subcommands is stable, devel, plugin, and'

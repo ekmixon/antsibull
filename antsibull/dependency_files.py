@@ -35,13 +35,11 @@ def parse_pieces_file(pieces_file: str) -> List[str]:
         contents = f.read()
 
     contents = contents.decode('utf-8')
-    # One collection per line, ignoring comments and empty lines
-    # TODO: PY3.8:
-    # collections = [c for line in contents.split('\n')
-    #                if (c := line.strip()) and not c.startswith('#')]
-    collections = [line.strip() for line in contents.split('\n')
-                   if line.strip() and not line.strip().startswith('#')]
-    return collections
+    return [
+        line.strip()
+        for line in contents.split('\n')
+        if line.strip() and not line.strip().startswith('#')
+    ]
 
 
 def _parse_name_version_spec_file(filename: str) -> DependencyFileData:
@@ -118,9 +116,7 @@ class DepsFile:
         :arg included_versions: Dictionary mapping collection names to the version range in this
             version of Ansible.
         """
-        records = []
-        for dep, version in included_versions.items():
-            records.append(f'{dep}: {version}')
+        records = [f'{dep}: {version}' for dep, version in included_versions.items()]
         records.sort()
 
         with open(self.filename, 'w') as f:
@@ -153,9 +149,11 @@ class BuildFile:
         :arg dependencies: Dictionary with keys of collection names and values of the latest
             versions of those collections.
         """
-        records = []
-        for dep, version in dependencies.items():
-            records.append(f'{dep}: >={version.major}.{version.minor}.0,<{version.next_major()}')
+        records = [
+            f'{dep}: >={version.major}.{version.minor}.0,<{version.next_major()}'
+            for dep, version in dependencies.items()
+        ]
+
         records.sort()
 
         with open(self.filename, 'w') as f:

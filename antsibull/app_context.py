@@ -202,7 +202,7 @@ def create_contexts(args: t.Optional[argparse.Namespace] = None,
 
     # Unused values are saved in app_ctx.extra when use_extra is set
     if use_extra:
-        unused_cfg.update(unused_args)
+        unused_cfg |= unused_args
         app_values['extra'] = unused_cfg
         unused_cfg = {}
         unused_args = {}

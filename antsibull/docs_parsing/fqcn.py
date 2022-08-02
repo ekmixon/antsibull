@@ -55,10 +55,10 @@ def get_fqcn_parts(fqcn: str) -> t.Tuple[str, str, str]:
     :returns: A tuple of (namespace, collection name, plugin short_name).
     :raises ValueError: If the string could not be parsed into fqcn components.
     """
-    match = FQCN_RE.match(fqcn)
-    if not match:
+    if match := FQCN_RE.match(fqcn):
+        return match.groups()
+    else:
         raise ValueError(f'{fqcn} could not be parsed into fqcn parts')
-    return match.groups()
 
 
 def is_fqcn(value: str) -> bool:

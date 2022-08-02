@@ -53,4 +53,6 @@ async def get_ansible_plugin_info(venv: t.Union['VenvRunner', 'FakeVenvRunner'],
         return await ansible_doc_get_ansible_plugin_info(
             venv, collection_dir, collection_names=collection_names)
 
-    raise Exception('Invalid value for doc_parsing_backend: %s' % (doc_parsing_backend, ))
+    raise Exception(
+        f'Invalid value for doc_parsing_backend: {doc_parsing_backend}'
+    )

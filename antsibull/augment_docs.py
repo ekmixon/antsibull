@@ -34,9 +34,7 @@ def add_full_key(options_data: t.Mapping[str, t.Any], suboption_entry: str,
         full_key_k = _full_key + [key]
         entry['full_key'] = full_key_k
 
-        # Process suboptions
-        suboptions = entry.get(suboption_entry)
-        if suboptions:
+        if suboptions := entry.get(suboption_entry):
             add_full_key(suboptions, suboption_entry=suboption_entry, _full_key=full_key_k)
 
 

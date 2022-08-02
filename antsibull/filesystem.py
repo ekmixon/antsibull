@@ -85,6 +85,4 @@ def writable_via_acls(path: str, euid: int) -> bool:
         # Okay, the principal has write in this case
         principal_has_write = True
 
-    if mask_has_write and principal_has_write:
-        return True
-    return False
+    return bool(mask_has_write and principal_has_write)

@@ -81,13 +81,13 @@ def find_symlink_redirects(collection_name: str,
     :directory_path: Full path to the directory we're scanning.
     :returns: Dict mapping fqcn of the alias names to fqcn of the canonical plugin names.
     """
-    plugin_type_routing = dict()
+    plugin_type_routing = {}
     if os.path.isdir(directory_path):
         for path, dummy, files in os.walk(directory_path):
             rel_path = os.path.relpath(path, directory_path)
             for filename in files:
                 src_basename, ext = os.path.splitext(filename)
-                if ext != '.py' and not (plugin_type == 'module' and ext == '.ps1'):
+                if ext != '.py' and (plugin_type != 'module' or ext != '.ps1'):
                     continue
 
                 file_path = os.path.join(path, filename)
@@ -180,9 +180,12 @@ def remove_flatmapping_artifacts(plugin_routing: t.Dict[str, t.Dict[str, t.Dict[
                     routing_data['redirect'], is_symlink = longname_to_shortname[redirect]
                     if routing_data.get('redirect_is_symlink') and not is_symlink:
                         routing_data.pop('redirect_is_symlink')
-                if plugin_name in longname_to_shortname:
-                    if 'tombstone' not in routing_data and 'deprecation' not in routing_data:
-                        plugin_routing_type.pop(plugin_name, None)
+                if (
+                    plugin_name in longname_to_shortname
+                    and 'tombstone' not in routing_data
+                    and 'deprecation' not in routing_data
+                ):
+                    plugin_routing_type.pop(plugin_name, None)
 
 
 def calculate_meta_runtime(collection_name, collection_metadata):
@@ -192,12 +195,11 @@ def calculate_meta_runtime(collection_name, collection_metadata):
     else:
         meta_runtime_path = os.path.join(collection_metadata.path, 'meta', 'runtime.yml')
 
-    if os.path.exists(meta_runtime_path):
-        meta_runtime = yaml.load_yaml_file(meta_runtime_path)
-    else:
-        meta_runtime = {}
-
-    return meta_runtime
+    return (
+        yaml.load_yaml_file(meta_runtime_path)
+        if os.path.exists(meta_runtime_path)
+        else {}
+    )
 
 
 async def load_collection_routing(collection_name: str,
@@ -277,13 +279,16 @@ def remove_redirect_duplicates(plugin_info: t.MutableMapping[str, t.MutableMappi
             # Check redirect
             if plugin_name in plugin_routing and 'redirect' in plugin_routing[plugin_name]:
                 destination = plugin_routing[plugin_name]['redirect']
-                if destination in plugin_map and destination != plugin_name:
-                    # Heuristic: if we have a redirect, and docs for both this plugin and the
-                    # redirected one are generated from the same plugin filename, then we can
-                    # remove this plugin's docs and generate a redirect stub instead.
-                    if compare_all_but(plugin_record['doc'], plugin_map[destination]['doc'],
-                                       ['filename']):
-                        del plugin_map[plugin_name]
+                if (
+                    destination in plugin_map
+                    and destination != plugin_name
+                    and compare_all_but(
+                        plugin_record['doc'],
+                        plugin_map[destination]['doc'],
+                        ['filename'],
+                    )
+                ):
+                    del plugin_map[plugin_name]
 
 
 def find_stubs(plugin_info: t.MutableMapping[str, t.MutableMapping[str, t.Any]],

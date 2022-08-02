@@ -17,9 +17,7 @@ def convert_none(value):
 
 
 def _is_truthy_int(value):
-    if value == 0:
-        return False
-    return True
+    return value != 0
 
 
 def convert_bool(value):

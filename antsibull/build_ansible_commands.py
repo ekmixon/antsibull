@@ -59,14 +59,7 @@ async def get_collection_versions(deps: t.Mapping[str, str],
 
             responses = await asyncio.gather(*requestors.values())
 
-    # Note: Python dicts have a stable sort order and since we haven't modified the dict since we
-    # used requestors.values() to generate responses, requestors and responses therefore have
-    # a matching order.
-    included_versions: t.Dict[str, SemVer] = {}
-    for collection_name, version in zip(requestors, responses):
-        included_versions[collection_name] = version
-
-    return included_versions
+    return dict(zip(requestors, responses))
 
 
 async def download_collections(versions: t.Mapping[str, SemVer],
@@ -166,7 +159,7 @@ def write_debian_directory(ansible_version: PypiVer,
     for filename in debian_files:
         # Don't use os.path.join here, the get_data docs say it should be
         # slash-separated.
-        src_pkgfile = 'debian/' + filename
+        src_pkgfile = f'debian/{filename}'
         data = get_antsibull_data(src_pkgfile).decode('utf-8')
 
         if filename.endswith('.j2'):
@@ -475,9 +468,11 @@ def build_multiple_command() -> int:
         os.mkdir(ansible_collections_dir, mode=0o700)
 
         # Construct the list of dependent collection packages
-        collection_deps = []
-        for collection, version in sorted(included_versions.items()):
-            collection_deps.append(f"        '{collection}>={version},<{version.next_major()}'")
+        collection_deps = [
+            f"        '{collection}>={version},<{version.next_major()}'"
+            for collection, version in sorted(included_versions.items())
+        ]
+
         collection_deps = '\n' + ',\n'.join(collection_deps)
         write_build_script(app_ctx.extra['ansible_version'], ansible_base_version, package_dir)
         write_python_build_files(app_ctx.extra['ansible_version'], ansible_base_version,

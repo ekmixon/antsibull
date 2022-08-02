@@ -41,10 +41,10 @@ def still_relevant(version, cutoff=TOO_OLD_TO_BE_NOTABLE):
     try:
         version = LooseVersion(version)
     except ValueError as e:
-        warnings.warn("Could not parse %s: %s" % (version, str(e)))
+        warnings.warn(f"Could not parse {version}: {str(e)}")
         return True
     try:
         return version >= LooseVersion(cutoff)
     except Exception as e:
-        warnings.warn("Could not compare %s: %s" % (version, str(e)))
+        warnings.warn(f"Could not compare {version}: {str(e)}")
         return True

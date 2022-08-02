@@ -120,7 +120,7 @@ def _normalize_release_build_options(args: argparse.Namespace) -> None:
     )
 
     if args.build_file is None:
-        args.build_file = DEFAULT_FILE_BASE + f'-{compat_version_part}.build'
+        args.build_file = f'{DEFAULT_FILE_BASE}-{compat_version_part}.build'
 
     build_filename = os.path.join(args.data_dir, args.build_file)
     if not os.path.isfile(build_filename):
@@ -136,9 +136,10 @@ def _normalize_release_build_options(args: argparse.Namespace) -> None:
 
         args.deps_file = f'{basename}-{args.ansible_version}.deps'
 
-    if args.command in ('single', 'multiple'):
-        if not os.path.isdir(args.sdist_dir):
-            raise InvalidArgumentError(f'{args.sdist_dir} must be an existing directory')
+    if args.command in ('single', 'multiple') and not os.path.isdir(
+        args.sdist_dir
+    ):
+        raise InvalidArgumentError(f'{args.sdist_dir} must be an existing directory')
 
 
 def _normalize_release_rebuild_options(args: argparse.Namespace) -> None:
@@ -161,7 +162,7 @@ def _normalize_collection_build_options(args: argparse.Namespace) -> None:
         return
 
     if args.deps_file is None:
-        args.deps_file = DEFAULT_FILE_BASE + f'{args.ansible_version}.deps'
+        args.deps_file = f'{DEFAULT_FILE_BASE}{args.ansible_version}.deps'
 
     if not os.path.isdir(args.collection_dir):
         raise InvalidArgumentError(f'{args.collection_dir} must be an existing directory')

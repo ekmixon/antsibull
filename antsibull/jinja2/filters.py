@@ -60,9 +60,7 @@ def documented_type(text):
         return 'boolean'
     if text == 'int':
         return 'integer'
-    if text == 'dict':
-        return 'dictionary'
-    return text
+    return 'dictionary' if text == 'dict' else text
 
 
 # The max filter was added in Jinja2-2.10.  Until we can require that version, use this

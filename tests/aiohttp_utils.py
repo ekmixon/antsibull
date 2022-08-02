@@ -52,7 +52,7 @@ class FakeResolver:
         try:
             fake_port = self._servers[host, port]
         except KeyError:
-            raise OSError('Fake DNS lookup failed: no fake server known for %s' % host)
+            raise OSError(f'Fake DNS lookup failed: no fake server known for {host}')
         return [{
             'hostname': host,
             'host': '127.0.0.1',

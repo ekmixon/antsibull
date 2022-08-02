@@ -82,8 +82,7 @@ def lint_required_conditions(content: str, collection_name: str
     label_prefix = get_label_prefix(collection_name)
     # Check label definitions
     for row, line in enumerate(content.splitlines()):
-        m = _RST_LABEL_DEFINITION.match(line)
-        if m:
+        if m := _RST_LABEL_DEFINITION.match(line):
             label = m.group(1)
             if not label.startswith(label_prefix):
                 errors.append((

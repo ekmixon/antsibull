@@ -30,8 +30,7 @@ def load_collection_name(path_to_collection: str) -> str:
         raise Exception(f'Cannot find file {galaxy_yml_path}')
 
     galaxy_yml = load_yaml_file(galaxy_yml_path)
-    collection_name = '{namespace}.{name}'.format(**galaxy_yml)
-    return collection_name
+    return '{namespace}.{name}'.format(**galaxy_yml)
 
 
 def lint_optional_conditions(content: str, path: str, collection_name: str

@@ -80,9 +80,10 @@ class GalaxyClient:
                 raise NoSuchCollection(f'No collection found at: {versions_url}')
             collection_info = await response.json()
 
-        versions = []
-        for version_record in collection_info['results']:
-            versions.append(version_record['version'])
+        versions = [
+            version_record['version']
+            for version_record in collection_info['results']
+        ]
 
         if collection_info['next']:
             versions.extend(await self._get_galaxy_versions(collection_info['next']))
@@ -226,14 +227,15 @@ class CollectionDownloader(GalaxyClient):
         download_filename = os.path.join(self.download_dir, release_info['artifact']['filename'])
         sha256sum = release_info['artifact']['sha256']
 
-        if self.collection_cache:
-            if release_info['artifact']['filename'] in os.listdir(self.collection_cache):
-                # TODO: PY3.8: We can use t.Final in __init__ instead of cast here.
-                cached_copy = os.path.join(t.cast(str, self.collection_cache),
-                                           release_info['artifact']['filename'])
-                if await verify_hash(cached_copy, sha256sum):
-                    shutil.copyfile(cached_copy, download_filename)
-                return download_filename
+        if self.collection_cache and release_info['artifact'][
+            'filename'
+        ] in os.listdir(self.collection_cache):
+            # TODO: PY3.8: We can use t.Final in __init__ instead of cast here.
+            cached_copy = os.path.join(t.cast(str, self.collection_cache),
+                                       release_info['artifact']['filename'])
+            if await verify_hash(cached_copy, sha256sum):
+                shutil.copyfile(cached_copy, download_filename)
+            return download_filename
 
         async with retry_get(self.aio_session, release_url,
                              acceptable_error_codes=[404]) as response:

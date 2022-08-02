@@ -58,21 +58,25 @@ class LogOutputModel(BaseModel):
     kwargs: t.Mapping[str, t.Any] = {}
 
     @p.validator('args')
-    def expand_home_dir_args(cls, args_field: t.MutableSequence,
-                             values: t.Mapping) -> t.MutableSequence:
+    def expand_home_dir_args(self, args_field: t.MutableSequence, values: t.Mapping) -> t.MutableSequence:
         """Expand tilde in the arguments of specific outputs."""
-        if values['output'] in ('twiggy.outputs.FileOutput', twiggy.outputs.FileOutput):
-            if args_field:
-                args_field[0] = os.path.expanduser(args_field[0])
+        if (
+            values['output']
+            in ('twiggy.outputs.FileOutput', twiggy.outputs.FileOutput)
+            and args_field
+        ):
+            args_field[0] = os.path.expanduser(args_field[0])
         return args_field
 
     @p.validator('kwargs')
-    def expand_home_dir_kwargs(cls, kwargs_field: t.MutableMapping,
-                               values: t.Mapping) -> t.MutableMapping:
+    def expand_home_dir_kwargs(self, kwargs_field: t.MutableMapping, values: t.Mapping) -> t.MutableMapping:
         """Expand tilde in the keyword arguments of specific outputs."""
-        if values['output'] in ('twiggy.outputs.FileOutput', twiggy.outputs.FileOutput):
-            if 'name' in kwargs_field:
-                kwargs_field['name'] = os.path.expanduser(kwargs_field['name'])
+        if (
+            values['output']
+            in ('twiggy.outputs.FileOutput', twiggy.outputs.FileOutput)
+            and 'name' in kwargs_field
+        ):
+            kwargs_field['name'] = os.path.expanduser(kwargs_field['name'])
         return kwargs_field
 
 

@@ -38,11 +38,12 @@ def load_plugin(loader, plugin_type, plugin):
         filename = plugin_context.plugin_resolved_path
         collection_name = plugin_context.plugin_resolved_collection
 
-        result.update({
+        result |= {
             'plugin_name': plugin_name,
             'filename': filename,
             'collection_name': collection_name,
-        })
+        }
+
 
         documentation, plainexamples, returndocs, metadata = get_docstring(
             filename, fragment_loader, verbose=False,
@@ -57,11 +58,7 @@ def load_plugin(loader, plugin_type, plugin):
 
         if plugin_type == 'module':
             # is there corresponding action plugin?
-            if plugin in action_loader:
-                documentation['has_action'] = True
-            else:
-                documentation['has_action'] = False
-
+            documentation['has_action'] = plugin in action_loader
         ansible_doc = {
             'doc': documentation,
             'examples': plainexamples,
@@ -75,13 +72,12 @@ def load_plugin(loader, plugin_type, plugin):
             # Store result. This is guaranteed to be serializable
             result['ansible-doc'] = ansible_doc
         except Exception as e:
-            result['error'] = (
-                'Cannot serialize documentation as JSON: %s' % to_native(e)
-            )
+            result['error'] = f'Cannot serialize documentation as JSON: {to_native(e)}'
     except Exception as e:
-        result['error'] = (
-            'Missing documentation or could not parse documentation: %s' % to_native(e)
-        )
+        result[
+            'error'
+        ] = f'Missing documentation or could not parse documentation: {to_native(e)}'
+
 
     return result
 
@@ -95,14 +91,11 @@ def match_filter(name, coll_filter):
         return True
     if '.' not in name and 'ansible.builtin' in coll_filter:
         return True
-    for filter in coll_filter:
-        if name.startswith(filter + '.'):
-            return True
-    return False
+    return any(name.startswith(f'{filter}.') for filter in coll_filter)
 
 
 def load_all_plugins(plugin_type, basedir, coll_filter):
-    loader = getattr(plugin_loader, '%s_loader' % plugin_type)
+    loader = getattr(plugin_loader, f'{plugin_type}_loader')
 
     if basedir:
         loader.add_directory(basedir, with_subdir=True)
@@ -120,12 +113,11 @@ def load_all_plugins(plugin_type, basedir, coll_filter):
     doc.add_collection_plugins(
         plugin_list, plugin_type, coll_filter=ansible_doc_coll_filter(coll_filter))
 
-    result = {}
-    for plugin in plugin_list:
-        if match_filter(plugin, coll_filter):
-            result[plugin] = load_plugin(loader, plugin_type, plugin)
-
-    return result
+    return {
+        plugin: load_plugin(loader, plugin_type, plugin)
+        for plugin in plugin_list
+        if match_filter(plugin, coll_filter)
+    }
 
 
 def load_collection_meta_manifest(b_manifest_path):

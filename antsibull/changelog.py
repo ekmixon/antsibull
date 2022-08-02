@@ -113,8 +113,7 @@ def read_file(tarball_path: str, matcher: t.Callable[[str], bool]) -> t.Optional
     with tarfile.open(tarball_path, "r:gz") as tar:
         for file in tar:
             if matcher(file.name):
-                file_p = tar.extractfile(file)
-                if file_p:
+                if file_p := tar.extractfile(file):
                     with file_p:
                         return file_p.read()
     return None
@@ -125,7 +124,7 @@ def read_changelog_file(tarball_path: str, is_ansible_base=False) -> t.Optional[
         if is_ansible_base:
             return filename.endswith('changelogs/changelog.yaml')
         else:
-            return filename in ('changelogs/changelog.yaml', 'changelog.yaml')
+            return filename in {'changelogs/changelog.yaml', 'changelog.yaml'}
 
     return read_file(tarball_path, matcher)
 
@@ -476,8 +475,8 @@ def get_changelog(
         for deps in deps_data:
             dependencies[deps.ansible_version] = deps
 
-    base_versions: t.Dict[PypiVer, str] = dict()
-    versions: t.Dict[str, t.Tuple[PypiVer, DependencyFileData]] = dict()
+    base_versions: t.Dict[PypiVer, str] = {}
+    versions: t.Dict[str, t.Tuple[PypiVer, DependencyFileData]] = {}
     versions_per_collection: t.Dict[str, t.Dict[PypiVer, str]] = defaultdict(dict)
     for deps in dependencies.values():
         version = PypiVer(deps.ansible_version)

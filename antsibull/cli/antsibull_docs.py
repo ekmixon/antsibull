@@ -116,10 +116,11 @@ def _normalize_current_options(args: argparse.Namespace) -> None:
     if args.command != 'current':
         return
 
-    if args.collection_dir is not None:
-        if not os.path.isdir(os.path.join(args.collection_dir, 'ansible_collections')):
-            raise InvalidArgumentError(f'The collection directory, {args.collection_dir}, must be'
-                                       ' a directory containing a subdirectory ansible_collections')
+    if args.collection_dir is not None and not os.path.isdir(
+        os.path.join(args.collection_dir, 'ansible_collections')
+    ):
+        raise InvalidArgumentError(f'The collection directory, {args.collection_dir}, must be'
+                                   ' a directory containing a subdirectory ansible_collections')
 
 
 def _normalize_plugin_options(args: argparse.Namespace) -> None:
@@ -282,10 +283,9 @@ def parse_args(program_name: str, args: List[str]) -> argparse.Namespace:
     if '--skip-indexes' in args:
         flog.warning('The CLI parameter, `--skip-indexes` has been renamed to'
                      ' `--no-indexes`.  Please use that instead')
-        if '--indexes' or '--no-indexes' in args:
-            raise InvalidArgumentError('You cannot use `--indexes`/`--no-indexes` with'
-                                       ' `--skip-indexes`. Please remove `--skip-indexes`'
-                                       ' and try again.')
+        raise InvalidArgumentError('You cannot use `--indexes`/`--no-indexes` with'
+                                   ' `--skip-indexes`. Please remove `--skip-indexes`'
+                                   ' and try again.')
 
     args: argparse.Namespace = parser.parse_args(args)
     flog.fields(args=args).debug('Arguments parsed')

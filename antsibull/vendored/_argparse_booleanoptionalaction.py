@@ -26,11 +26,10 @@ def _add_default_to_help_string(action):
     """
     help = action.help
 
-    if '%(default)' not in action.help:
-        if action.default is not SUPPRESS:
-            defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
-            if action.option_strings or action.nargs in defaulting_nargs:
-                help += ' (default: %(default)s)'
+    if '%(default)' not in action.help and action.default is not SUPPRESS:
+        defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
+        if action.option_strings or action.nargs in defaulting_nargs:
+            help += ' (default: %(default)s)'
     return help
 
 
@@ -50,7 +49,7 @@ class BooleanOptionalAction(Action):
             _option_strings.append(option_string)
 
             if option_string.startswith('--'):
-                option_string = '--no-' + option_string[2:]
+                option_string = f'--no-{option_string[2:]}'
                 _option_strings.append(option_string)
 
         # if help is not None and default is not None:

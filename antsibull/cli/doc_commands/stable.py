@@ -138,7 +138,7 @@ def normalize_plugin_info(plugin_type: str,
 
             field_model = DOCS_SCHEMAS[plugin_type][field].parse_obj({})
 
-        new_info.update(field_model.dict(by_alias=True))
+        new_info |= field_model.dict(by_alias=True)
 
     return (new_info, errors)
 
